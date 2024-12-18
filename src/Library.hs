@@ -98,3 +98,78 @@ danioRecibido :: Nave -> Nave -> Number
 danioRecibido naveAtacante naveDefensora = ataque naveAtacante - escudo naveDefensora
 
 -- 4) Averiguar si una nave está fuera de combate, lo que se obtiene cuando su durabilidad llegó a 0. 
+
+estaFueraDeCombate :: Nave -> Bool
+estaFueraDeCombate = (== 0) . durabilidad
+
+-- 5) Averiguar cómo queda una flota enemiga luego de realizar una misión sorpresa con una nave siguiendo una estrategia.
+-- Una estrategia es una condición por la cual la nave atacante decide atacar o no una cierta nave de la flota. 
+-- Por lo tanto la misión sorpresa de una nave hacia una flota significa atacar todas aquellas naves de la flota que 
+-- la estrategia determine que conviene atacar. 
+
+realizarMisionSorpresa :: Nave -> Estrategia -> [Nave] -> [Nave]
+realizarMisionSorpresa naveAtacante estrategia  = map (intentarAtaque naveAtacante) . filter estrategia
+-- 1ero. Filtro las naves de la flota que la estrategia determina conveniente a atacar
+-- 2dos. Ataco todas aquellas naves que fueron filtradas y me devuelve como quedo la flota atacada
+
+-- Podria utilizarlo
+intentarAtaqueFlota :: Nave -> [Nave] -> [Nave]
+intentarAtaqueFlota naveAtacante = map (intentarAtaque naveAtacante) 
+
+-- Algunas estrategias que existen, y que deben estar reflejadas en la solución, son:
+
+type Estrategia = Nave -> Bool
+
+-- 1. Naves débiles: Son aquellas naves que tienen menos de 200 de escudo.
+
+naveDebil :: Estrategia
+naveDebil = (< 200) . escudo 
+
+-- 2. Naves con cierta peligrosidad: Son aquellas naves que tienen un ataque mayor a un valor dado. 
+-- Por ejemplo, en alguna misión se podría utilizar una estrategia de peligrosidad mayor a 300, y 
+-- en otra una estrategia de peligrosidad mayor a 100.
+
+naveConCiertaPeligrosidad :: Number -> Estrategia
+naveConCiertaPeligrosidad valor = (> valor) . ataque
+
+-- 3. Naves que quedarían fuera de combate: Son aquellas naves de la flota que luego del ataque de la nave atacante 
+-- quedan fuera de combate. 
+
+naveQueQuedariaFueraDeCombate :: Nave -> Estrategia
+naveQueQuedariaFueraDeCombate naveAtacante = estaFueraDeCombate . atacar naveAtacante
+
+-- 4. Inventar una nueva estrategia
+
+naveQueComienzaConNave :: Estrategia
+naveQueComienzaConNave = (=="Nave") . take 4 . nombre
+
+-- 6) Considerando una nave y una flota enemiga en particular, dadas dos estrategias, determinar 
+-- cuál de ellas es la que minimiza la durabilidad total de la flota atacada y llevar adelante una misión con ella.
+
+realizarMisionConEstratategiaMasOptima :: Nave -> Estrategia -> Estrategia -> [Nave] -> [Nave]
+realizarMisionConEstratategiaMasOptima naveAtacante estrategia1 estrategia2 flotaEnemiga = realizarMisionSorpresa naveAtacante (minimizaLaDurabilidad naveAtacante estrategia1 estrategia2 flotaEnemiga) flotaEnemiga
+
+minimizaLaDurabilidad :: Nave -> Estrategia -> Estrategia -> [Nave] -> Estrategia
+minimizaLaDurabilidad naveAtacante estrategia1 estrategia2 flotaEnemiga
+    | durabilidadTotal (realizarMisionSorpresa naveAtacante estrategia1 flotaEnemiga) <= durabilidadTotal (realizarMisionSorpresa naveAtacante estrategia2 flotaEnemiga) = estrategia1
+    | otherwise                                                                                                                                                          = estrategia2       
+    
+-- 7) Construir una flota infinita de naves. ¿Es posible determinar su durabilidad total? 
+-- ¿Qué se obtiene como respuesta cuando se lleva adelante una misión sobre ella? Justificar conceptualmente   
+
+flotaInfinita :: [Nave]
+flotaInfinita = tieFighter : flotaInfinita      
+
+-- > durabilidadTotal flotaInfinita 
+-- ERROR
+
+-- No es posible determinar la durabilidad total de una flota infinita porque para realizar el calculo de dicha durabilidad
+-- necesito la durabilidad de cada una de las naves que conforman a la flota para luego realizar la sumatoria. Por lo tanto,
+-- al ser una lista infinita nunca voy a llegar a sumar todas las durabilidades
+
+-- > realizarMisionSorpresa nave estrategia flotaInfinita
+-- ERROR
+
+-- Tampoco sera posible porque la estrategia analizara/filtrara las naves que determine conveniente atacar y como es una flota
+-- infinita "nunca" terminara de filtrar dichas naves. Ademas ninguna de las estrategias definidas impilica por ej que TODAS o ALGUNAS 
+-- de las naves cumplan tal requesito, por lo tanto "nunca" dejara de chequear si la siguiente nave en la lista cumple o no
