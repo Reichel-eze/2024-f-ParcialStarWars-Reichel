@@ -108,9 +108,17 @@ estaFueraDeCombate = (== 0) . durabilidad
 -- la estrategia determine que conviene atacar. 
 
 realizarMisionSorpresa :: Nave -> Estrategia -> [Nave] -> [Nave]
-realizarMisionSorpresa naveAtacante estrategia  = map (intentarAtaque naveAtacante) . filter estrategia
--- 1ero. Filtro las naves de la flota que la estrategia determina conveniente a atacar
--- 2dos. Ataco todas aquellas naves que fueron filtradas y me devuelve como quedo la flota atacada
+realizarMisionSorpresa naveAtacante estrategia flota = map (intentarAtaque naveAtacante) (filter estrategia flota) ++ filter (not . estrategia) flota
+-- 1ero. Filtro las naves que no cumplen con la estrategia y luego las uno a...
+-- 2dos. Filtro las naves de la flota que la estrategia determina conveniente a atacar
+-- 3dos. Ataco todas aquellas naves que fueron filtradas y me devuelve como quedo la flota atacada
+
+realizarMisionSorpresa' :: Nave -> Estrategia -> [Nave] -> [Nave]
+realizarMisionSorpresa' naveAtacante = mapSelectivo (intentarAtaque naveAtacante) 
+
+-- Es lo mimso que un map pero agregando un booleano
+mapSelectivo :: (a -> a) -> (a -> Bool) -> [a] -> [a]
+mapSelectivo cambio estrategia flota = map cambio (filter estrategia flota) ++ filter (not . estrategia) flota
 
 -- Podria utilizarlo
 intentarAtaqueFlota :: Nave -> [Nave] -> [Nave]
